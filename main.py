@@ -21,13 +21,16 @@ from opencensus.trace.samplers import ProbabilitySampler
 from opencensus.trace.tracer import Tracer
 from opencensus.ext.flask.flask_middleware import FlaskMiddleware
 
-guid = "575fd8dc-1213-42b8-9cd4-9140fdf9c573"
+guid = "e8cc5332-9e7c-4b62-9e30-4f42b2530de3"
 
 # Logger
 logger = logging.getLogger(__name__)
 logger.addHandler(AzureLogHandler(
     connection_string=f'InstrumentationKey={guid}')
 )
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.INFO)
+
 # Metrics
 exporter = metrics_exporter.new_metrics_exporter(
   enable_standard_metrics=True,
@@ -99,12 +102,10 @@ def index():
             r.set(button1,0)
             r.set(button2,0)
             vote1 = r.get(button1).decode('utf-8')
-            properties = {'custom_dimensions': {'Cats Vote': vote1}}
-            app.logger.info("Vote cast", extra=properties)
-
             vote2 = r.get(button2).decode('utf-8')
-            properties = {'custom_dimensions': {'Dogs Vote': vote2}}
-            app.logger.info("Vote cast", extra=properties)
+            
+            properties = {'custom_dimensions': {'cat_votes': vote1, "dog_votes": vote2}}
+            logger.info("reset", extra=properties)
 
             return render_template("index.html", value1=int(vote1), value2=int(vote2), button1=button1, button2=button2, title=title)
 
@@ -117,6 +118,9 @@ def index():
             # Get current values
             vote1 = r.get(button1).decode('utf-8')
             vote2 = r.get(button2).decode('utf-8')
+
+            properties = {'custom_dimensions': {'cat_votes': vote1, "dog_votes": vote2}}
+            logger.info(f"new_{vote}_vote", extra=properties)
 
             # Return results
             return render_template("index.html", value1=int(vote1), value2=int(vote2), button1=button1, button2=button2, title=title)
